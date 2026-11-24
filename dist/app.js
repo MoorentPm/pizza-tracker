@@ -95,9 +95,11 @@ function setDirty() {
 }
 function leaveDraft() { return !dirty || confirm('Ci sono modifiche non salvate. Vuoi lasciarle e continuare?'); }
 function selectDate(next) {
-  if (!validDate(next) || !leaveDraft()) { $('date').value = selected; return; }
+  if (next === selected) return true;
+  if (!validDate(next) || !leaveDraft()) { $('date').value = selected; return false; }
   if(dirty)void PizzaVault.saveDraft(null).catch(error=>message(error.message,true));
   selected = next; page = 0; loadDay(); render();
+  return true;
 }
 function moveMonth(delta) {
   const d = new Date(`${selected}T12:00:00`), day = d.getDate();
@@ -110,8 +112,6 @@ function render() {
   const rows = Object.values(records), monthRows = rows.filter(r => r.date.startsWith(month)), yearRows = rows.filter(r => r.date.startsWith(year));
   $('monthTitle').textContent = new Date(`${selected}T12:00:00`).toLocaleDateString('it-IT', {month:'long', year:'numeric'});
   $('yearLabel').textContent = year;
-  const estimates=rows.filter(isEstimate).sort((a,b)=>a.date.localeCompare(b.date));
-  $('historyCoverage').textContent=estimates.length ? `Archivio sul telefono: ${rows.length} giornate, incluse ${estimates.length} stimate dal ${estimates[0].date.split('-').reverse().join('/')} al ${estimates.at(-1).date.split('-').reverse().join('/')}. I dati già presenti sono mantenuti.` : `Archivio sul telefono: ${rows.length} giornate. Nessuna stima presente. Se manca lo storico, usa “Aggiorna app”.`;
   for (const [prefix, list] of [['month',monthRows],['year',yearRows]]) {
     const s = summarize(list);
     $(prefix+'Total').textContent = fmt.format(s.total);
@@ -126,7 +126,19 @@ function render() {
     bar.className = `bar${date === selected ? ' selected' : ''}${!r ? ' empty' : ''}`;
     bar.style.height = `${r ? Math.max(3, r.count/max*100) : 2}%`;
     bar.title = `${day}: ${r ? r.count+' pizze'+(isEstimate(r)?' (stima)':'') : 'non registrato'}`;
-    $('chart').append(bar);
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'chart-day'; button.dataset.date = date;
+    const label = new Date(`${date}T12:00:00`).toLocaleDateString('it-IT', {day:'numeric',month:'long',year:'numeric'});
+    button.setAttribute('aria-label', `${label}: ${r ? r.count+' pizze'+(isEstimate(r)?' (stima)':'') : 'non registrato'}`);
+    button.setAttribute('aria-pressed', String(date === selected));
+    button.title = button.getAttribute('aria-label'); bar.setAttribute('aria-hidden','true');
+    button.append(bar);
+    button.onclick = () => {
+      if (!selectDate(date)) return;
+      $('dayLabel').focus({preventScroll:true});
+      $('dayEntry').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+    };
+    $('chart').append(button);
   }
   $('chart').setAttribute('aria-label', `Produzione di ${$('monthTitle').textContent}: ${monthRows.length ? monthRows.map(r=>`${r.date.slice(8)}: ${r.count} pizze`).join(', ') : 'nessuna giornata registrata'}`);
   $('lastDay').textContent = days;
@@ -274,6 +286,6 @@ function init() {
 }
 if(typeof document!=='undefined'){
   window.addEventListener('pizza-unlocked',init);
-  window.addEventListener('pizza-locked',()=>{records={};dirty=false;workbook=null;rawJson=null;pending=[];importIssues=[];selected=today();$('entryForm').reset();$('records').replaceChildren();$('previewRows').replaceChildren();$('chart').replaceChildren();$('reportPeriod').replaceChildren();for(const id of ['historyCoverage','status','monthTotal','yearTotal','monthAvg','yearAvg','monthDays','yearDays','archiveSummary','pageInfo','dayLabel','importSummary','fileName','importErrors','reportSummary','reportCoverage'])$(id).textContent='';});
+  window.addEventListener('pizza-locked',()=>{records={};dirty=false;workbook=null;rawJson=null;pending=[];importIssues=[];selected=today();$('entryForm').reset();$('records').replaceChildren();$('previewRows').replaceChildren();$('chart').replaceChildren();$('reportPeriod').replaceChildren();for(const id of ['status','monthTotal','yearTotal','monthAvg','yearAvg','monthDays','yearDays','archiveSummary','pageInfo','dayLabel','importSummary','fileName','importErrors','reportSummary','reportCoverage'])$(id).textContent='';});
 }
 if(typeof module!=='undefined')module.exports={validDate,parseDate,parseCount,normalizeRecords,summarize};

@@ -84,7 +84,6 @@
       if(document.hidden){key=null;payload=null;el('pin').value='';return;}
       failures=0;el('pin').value='';el('lockScreen').hidden=true;el('appShell').hidden=false;
       window.dispatchEvent(new Event('pizza-unlocked'));
-      if(history.added)message(`${history.added} giornate dello storico aggiunte automaticamente. I dati già presenti sono stati mantenuti.${next.draft?' La bozza della serata è stata recuperata.':''}`);
     }catch(error){
       key=null;payload=null;
       el('pinError').textContent=error.name==='OperationError'?'Archivio non leggibile. Conserva i dati del sito e usa una copia di backup.':error instanceof SyntaxError?'Archivio non leggibile. I dati originali non sono stati modificati.':error.message;
@@ -92,6 +91,7 @@
     }finally{
       if(failures>=3)await new Promise(resolve=>setTimeout(resolve,5000));
       busy=false;el('unlock').disabled=false;
+      window.dispatchEvent(new Event('pizza-vault-idle'));
     }
   }
   async function lock() {
@@ -102,11 +102,13 @@
     await queue;key=null;payload=null;externalUntil=0;
     window.dispatchEvent(new Event('pizza-locked'));
     locking=false;el('unlock').disabled=false;
+    window.dispatchEvent(new Event('pizza-vault-idle'));
   }
   window.PizzaVault={
     getRecords:()=>structuredClone(payload?.records??{}),
     getDraft:()=>structuredClone(payload?.draft??null),
     isUnlocked:()=>!!key&&!locking,
+    isBusy:()=>busy||locking,
     saveRecords:updates=>commit(p=>{p.records={...p.records,...updates};p.draft=null;return p;}),
     saveDraft:draft=>commit(p=>{p.draft=draft;return p;}),
     externalAction:()=>{externalUntil=Date.now()+120000;},

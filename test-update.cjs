@@ -16,14 +16,14 @@ const oldEncrypted=await page.evaluate(()=>localStorage.getItem('pizza-tracker.s
 // A second old window keeps the original worker alive, reproducing a stuck PWA update.
 const oldWindow=await context.newPage();await oldWindow.goto(url);
 serveCurrent=true;
-await page.goto(url+'update.html');await page.locator('#update').click();await page.waitForURL('**/?updated=1');
+await page.goto(url+'update.html');await page.waitForURL('**/?updated=1');
 assert.equal(await page.evaluate(()=>localStorage.getItem('pizza-tracker.secure.v1')),oldEncrypted);
-await unlock(page);const rows=await page.evaluate(()=>PizzaVault.getRecords());assert.equal(Object.keys(rows).length,559);assert.equal(Object.values(rows).filter(r=>r.notes.startsWith('[STIMA]')).length,66);assert.equal(rows['2025-01-01'].count,321);assert.match(await page.locator('#historyCoverage').textContent(),/66 stimate dal 20\/09\/2026 al 24\/11\/2026/);
+await unlock(page);const rows=await page.evaluate(()=>PizzaVault.getRecords());assert.equal(Object.keys(rows).length,559);assert.equal(Object.values(rows).filter(r=>r.notes.startsWith('[STIMA]')).length,66);assert.equal(rows['2025-01-01'].count,321);assert.equal(await page.locator('#status').textContent(),'');
 await context.setOffline(true);await page.reload();await unlock(page);assert.equal(await page.evaluate(()=>Object.keys(PizzaVault.getRecords()).length),559);assert.deepEqual(errors,[]);
 await context.setOffline(false);
 // Explicit update is also safe when the installed version is already current.
-await page.goto(url+'update.html');await page.locator('#update').click();await page.waitForURL('**/?updated=1');await unlock(page);assert.equal(await page.evaluate(()=>PizzaVault.getRecords()['2025-01-01'].count),321);
+await page.goto(url+'update.html');await page.waitForURL('**/?updated=1');await unlock(page);assert.equal(await page.evaluate(()=>PizzaVault.getRecords()['2025-01-01'].count),321);
 // Direct update link works for a fresh browser with no registration yet.
-const fresh=await browser.newContext();const freshPage=await fresh.newPage();await freshPage.goto(url+'update.html');await freshPage.locator('#update').click();await freshPage.waitForURL('**/?updated=1');await unlock(freshPage);assert.equal(await freshPage.evaluate(()=>Object.keys(PizzaVault.getRecords()).length),559);
+const fresh=await browser.newContext();const freshPage=await fresh.newPage();await freshPage.goto(url+'update.html');await freshPage.waitForURL('**/?updated=1');await unlock(freshPage);assert.equal(await freshPage.evaluate(()=>Object.keys(PizzaVault.getRecords()).length),559);
 console.log('PASS update: old v5 app/cache plus another open tab -> explicit update -> 66 missing estimates, preserved encrypted archive and local correction, offline reload; current version and fresh install.');
 }finally{await browser.close();await new Promise(r=>server.close(r));}})().catch(e=>{console.error(e);server.close();process.exitCode=1;});

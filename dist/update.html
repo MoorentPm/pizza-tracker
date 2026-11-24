@@ -1,37 +1,28 @@
 <!DOCTYPE html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#b9f475"><title>Aggiorna Pizza Tracker</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#edf1f3;color:#293222;font:16px/1.55 Arial,sans-serif;min-height:100dvh;display:grid;place-items:center;padding:24px}main{max-width:460px;width:100%;background:white;border-radius:28px;padding:30px}h1{font-size:30px;line-height:1.2;letter-spacing:-1px}p{color:#56624e}button,a{font:inherit;display:block;text-align:center;border:0;border-radius:24px;padding:13px 20px;width:100%;text-decoration:none;color:inherit}button{background:#b9f475;cursor:pointer;margin:20px 0 12px}button:disabled{opacity:.6}a{background:#edf1f3}#state{min-height:55px}small{display:block;color:#64715e;font-size:14px;margin-top:22px}</style>
-</head><body><main><h1>Aggiorna il tuo registro</h1><p>Scarica la versione aggiornata con lo storico e le stime fino al 24 novembre 2026. I conteggi e le note già salvati sul telefono vengono mantenuti.</p><p id="state" role="status">Serve una connessione internet. Non occorre cancellare la memoria del browser o reinstallare l’app.</p><button id="update">Aggiorna e apri l’app</button><a href="./">Torna al registro</a><small>Dopo l’aggiornamento inserisci il PIN. Le giornate mancanti verranno aggiunte automaticamente, senza sostituire quelle già presenti.</small></main>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#b9f475"><title>Pizza Tracker</title>
+<style>body{margin:0;background:#edf1f3;color:#293222;font:16px/1.5 Arial,sans-serif;min-height:100dvh;display:grid;place-items:center}a{color:inherit}</style>
+</head><body><p role="status">Apertura del registro…</p><noscript><a href="./">Apri Pizza Tracker</a></noscript>
 <script>
 'use strict';
-const button=document.getElementById('update'),state=document.getElementById('state');
-button.onclick=async()=>{
-  button.disabled=true;state.textContent='Scaricamento e verifica della nuova versione…';
-  let timeout;
+(async()=>{
+  // Keep previously saved shortcuts working, without an update screen or button.
+  const openApp=()=>location.replace('./?updated=1');
+  const timeout=setTimeout(openApp,10000);
   try{
-    if(!('serviceWorker' in navigator))throw Error('Usa un browser aggiornato come Chrome.');
+    if(!('serviceWorker' in navigator)||!navigator.onLine)return;
     const registration=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});
     await registration.update();
-    await Promise.race([
-      new Promise((resolve,reject)=>{
-        const inspect=()=>{
-          const worker=registration.installing||registration.waiting||registration.active;
-          if(!worker){reject(Error('Aggiornamento non disponibile. Riprova.'));return;}
-          const changed=()=>{
-            if(worker.state==='redundant'){cleanup();reject(Error('Download incompleto. Controlla la connessione e riprova.'));}
-            else if(worker.state==='installed')worker.postMessage({type:'ACTIVATE_UPDATE'});
-            else if(worker.state==='activated'){cleanup();resolve();}
-          };
-          const cleanup=()=>worker.removeEventListener('statechange',changed);
-          worker.addEventListener('statechange',changed);changed();
-        };
-        inspect();
-      }),
-      new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('L’aggiornamento sta impiegando troppo tempo. Riprova tra poco.')),45000);})
-    ]);
-    state.textContent='Aggiornamento completato. Apertura del registro…';
-    location.replace('./?updated=1');
-  }catch(error){state.textContent=error.message||'Aggiornamento non riuscito. I dati sul telefono non sono stati modificati.';button.disabled=false;}
-  finally{clearTimeout(timeout);}
-};
+    await new Promise((resolve,reject)=>{
+      const worker=registration.installing||registration.waiting||registration.active;
+      if(!worker){resolve();return;}
+      const changed=()=>{
+        if(worker.state==='redundant'){worker.removeEventListener('statechange',changed);reject(Error('Download incomplete'));}
+        else if(worker.state==='installed')worker.postMessage({type:'ACTIVATE_UPDATE'});
+        else if(worker.state==='activated'){worker.removeEventListener('statechange',changed);resolve();}
+      };
+      worker.addEventListener('statechange',changed);changed();
+    });
+  }catch{/* The installed version remains usable when a download fails. */}
+  finally{clearTimeout(timeout);openApp();}
+})();
 </script></body></html>
