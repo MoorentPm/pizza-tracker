@@ -16,11 +16,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      actions: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      PAGES_ARTIFACT: pages-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
       - name: Check JavaScript syntax
@@ -31,7 +35,23 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
+          name: ${{ env.PAGES_ARTIFACT }}
           path: dist
+      - name: Wait for artifact availability
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in {1..12}; do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" \
+              | jq -e --arg name "$PAGES_ARTIFACT" '.artifacts | any(.name == $name and .expired == false)' >/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Pages artifact not yet available through the GitHub API."
+          exit 1
       - name: Publish
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT }}
