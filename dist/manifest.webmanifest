@@ -1,0 +1,11 @@
+{
+  "id":"./", "name":"Pizza Tracker", "short_name":"Pizza Tracker",
+  "description":"Il tuo registro personale di produzione, sul telefono e anche offline.",
+  "lang":"it", "start_url":"./", "scope":"./", "display":"standalone",
+  "background_color":"#edf1f3", "theme_color":"#b9f475",
+  "icons":[
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}

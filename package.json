@@ -1,0 +1,13 @@
+{
+  "name": "pizza-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Registro personale delle pizze, installabile e disponibile offline",
+  "scripts": {
+    "test": "node test.cjs",
+    "icons": "node generate-icons.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}
