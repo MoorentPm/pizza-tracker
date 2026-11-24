@@ -4,7 +4,7 @@
   "private": true,
   "description": "Registro personale delle pizze, installabile e disponibile offline",
   "scripts": {
-    "test": "node test.cjs",
+    "test": "node test.cjs && node test-history.cjs",
     "icons": "node generate-icons.cjs"
   },
   "devDependencies": {

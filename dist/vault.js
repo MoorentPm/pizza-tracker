@@ -4,6 +4,7 @@
   const PIN_SALT = '7f4b5a94b2ff461ba23e647a84576ade';
   const PIN_HASH = '320d3a696328d97d1eead42b354f826d959525fd72e8a215eef8a9b139c85be7';
   const rounds = 310000, encoder = new TextEncoder();
+  const HISTORY_ID = 'history-2026-09-19-v1';
   let key = null, payload = null, salt = null, snapshot = null, queue = Promise.resolve();
   let externalUntil = 0, failures = 0, busy = false, locking = false;
   const el = id => document.getElementById(id);
@@ -15,6 +16,28 @@
     return Array.from(new Uint8Array(bits), b=>b.toString(16).padStart(2,'0')).join('') === PIN_HASH;
   }
   async function makeKey(pin, saltBytes) {return crypto.subtle.deriveKey({name:'PBKDF2',salt:saltBytes,iterations:rounds,hash:'SHA-256'},await material(pin),{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+  async function mergeIncludedHistory(pin, next) {
+    if(next.includedHistory===HISTORY_ID)return {changed:false,added:0};
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+    let bundle;
+    try{
+      const response=await fetch('./history.enc.json',{signal:controller.signal});
+      if(!response.ok)throw Error('History unavailable');
+      bundle=await response.json();
+    }catch{throw Error('Storico iniziale non disponibile. Riapri l’app con una connessione internet; i dati già salvati non sono stati modificati.');}
+    finally{clearTimeout(timer);}
+    if(bundle.version!==1)throw Error('Formato dello storico iniziale non valido.');
+    const historyKey=await makeKey(pin,decode(bundle.salt));
+    const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(bundle.iv)},historyKey,decode(bundle.cipher));
+    const history=JSON.parse(new TextDecoder().decode(plain));
+    if(history.id!==HISTORY_ID)throw Error('Versione dello storico iniziale non valida.');
+    const rows=normalizeRecords(history);
+    if(new Set(rows.map(r=>r.date)).size!==rows.length)throw Error('Lo storico iniziale contiene date duplicate.');
+    let added=0;
+    for(const row of rows)if(!Object.hasOwn(next.records,row.date)){next.records[row.date]=row;added++;}
+    next.includedHistory=HISTORY_ID;
+    return {changed:true,added};
+  }
   function commit(change) {
     const operation = queue.then(async () => {
       if (!key || !payload) throw Error('Sblocca l’app per salvare.');
@@ -54,12 +77,14 @@
       normalizeRecords(next.records);
       // Validates old drafts too; an invalid draft must not prevent access to saved days.
       if(next.draft&&(!validDate(next.draft.date)||typeof next.draft.count!=='string'||typeof next.draft.notes!=='string'))next.draft=null;
+      const history=await mergeIncludedHistory(pin,next);
       key=newKey;salt=nextSalt;snapshot=raw;payload=next;
-      if(!raw)await commit(p=>p);
+      if(!raw||history.changed)await commit(p=>p);
       localStorage.removeItem(LEGACY); // Only after the encrypted replacement was saved successfully.
       if(document.hidden){key=null;payload=null;el('pin').value='';return;}
       failures=0;el('pin').value='';el('lockScreen').hidden=true;el('appShell').hidden=false;
       window.dispatchEvent(new Event('pizza-unlocked'));
+      if(history.added)message(`${history.added} giornate dello storico aggiunte automaticamente. I dati già presenti sono stati mantenuti.${next.draft?' La bozza della serata è stata recuperata.':''}`);
     }catch(error){
       key=null;payload=null;
       el('pinError').textContent=error.name==='OperationError'?'Archivio non leggibile. Conserva i dati del sito e usa una copia di backup.':error instanceof SyntaxError?'Archivio non leggibile. I dati originali non sono stati modificati.':error.message;

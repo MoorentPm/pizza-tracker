@@ -29,7 +29,11 @@ Web app italiana per il totale delle pizze a fine serata, note, statistiche mens
 
 ## Dati storici
 
-Il file Excel reale dell'utente non è ancora disponibile. L'archivio iniziale è vuoto: nessun conteggio dimostrativo è inserito nell'app.
+Lo storico fornito dal titolare è incluso in `dist/history.enc.json`, cifrato con AES-GCM e una chiave derivata dal PIN tramite PBKDF2-SHA256. Al primo sblocco viene aggiunto automaticamente al deposito locale. Anche chi aveva già utilizzato l'app riceve le date mancanti: dati e note già salvati, giornate a zero e bozze sono mantenuti. Un marcatore dentro l'archivio cifrato impedisce di reimportarlo a ogni apertura.
+
+Il file cifrato è scaricabile dal sito pubblico: chi conosce il PIN può leggere lo storico incluso. Un PIN numerico breve non protegge contro tentativi sistematici offline. I CSV/JSON originali in chiaro e il PIN non sono inclusi nel repository. I nuovi conteggi restano sul dispositivo e non modificano lo storico distribuito.
+
+Il service worker conserva anche lo storico cifrato per il primo sblocco offline dopo il caricamento completo. Se il file non è disponibile o non è valido, nessun archivio esistente viene sovrascritto. Dopo l'importazione iniziale le successive aperture usano solo l'archivio locale.
 
 Importazione `.xlsx`, `.xls`, `.csv` o backup `.json`. Per Excel scegliere un foglio alla volta, la riga delle intestazioni e le colonne data, quantità e note. Il modello scaricabile contiene `Data`, `Pizze`, `Note`. Date in formato Excel, `GG/MM/AAAA` o `AAAA-MM-GG`; quantità intere non negative. Eventuali righe di totale vanno rimosse prima dell'importazione. Non vengono ricostruiti conteggi giornalieri a partire da totali mensili.
 

@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
 const http = require('node:http');
+const crypto = require('node:crypto');
 const {chromium} = require('playwright');
 const XLSX = require('./dist/vendor/xlsx.full.min.js');
 global.XLSX = XLSX;
@@ -14,9 +15,15 @@ assert.equal(core.parseDate('31/02/2024'),null);
 assert.equal(core.parseDate(1,true),'1904-01-02');
 for(const bad of ['',null,-1,1.5,'1abc',true,'1e3'])assert.equal(core.parseCount(bad),null);
 assert.deepEqual(core.summarize([{count:0},{count:100}]),{total:100,days:2,avg:50});
+// Core regression suite serves an empty encrypted history fixture; test-history.cjs
+// separately verifies the actual bundled history and existing-device migration.
+const salt=crypto.randomBytes(16),iv=crypto.randomBytes(12);
+const fixtureCipher=crypto.createCipheriv('aes-256-gcm',crypto.pbkdf2Sync(pin,salt,310000,32,'sha256'),iv);
+const fixtureBytes=Buffer.concat([fixtureCipher.update(JSON.stringify({id:'history-2026-09-19-v1',records:{}})),fixtureCipher.final(),fixtureCipher.getAuthTag()]);
+const fixture=JSON.stringify({version:1,salt:salt.toString('base64'),iv:iv.toString('base64'),cipher:fixtureBytes.toString('base64')});
 const root=path.resolve('dist'),requests=[];
 const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.webmanifest':'application/manifest+json','.png':'image/png'};
-const server=http.createServer((req,res)=>{requests.push({method:req.method,url:req.url});const pathname=new URL(req.url,'http://localhost').pathname;if(!pathname.startsWith('/pizza-tracker/')){res.writeHead(404);res.end();return;}const name=pathname.slice('/pizza-tracker'.length);if(name==='/index.html'){res.writeHead(302,{Location:'/pizza-tracker/'});res.end();return;}const filename=path.resolve(root,'.'+(name==='/'?'/index.html':name));if(!filename.startsWith(root+path.sep)||!fs.existsSync(filename)){res.writeHead(404);res.end();return;}res.writeHead(200,{'Content-Type':mime[path.extname(filename)]||'text/plain','Cache-Control':'no-cache'});fs.createReadStream(filename).pipe(res);});
+const server=http.createServer((req,res)=>{requests.push({method:req.method,url:req.url});const pathname=new URL(req.url,'http://localhost').pathname;if(!pathname.startsWith('/pizza-tracker/')){res.writeHead(404);res.end();return;}const name=pathname.slice('/pizza-tracker'.length);if(name==='/history.enc.json'){res.writeHead(200,{'Content-Type':'application/json'});res.end(fixture);return;}if(name==='/index.html'){res.writeHead(302,{Location:'/pizza-tracker/'});res.end();return;}const filename=path.resolve(root,'.'+(name==='/'?'/index.html':name));if(!filename.startsWith(root+path.sep)||!fs.existsSync(filename)){res.writeHead(404);res.end();return;}res.writeHead(200,{'Content-Type':mime[path.extname(filename)]||'text/plain','Cache-Control':'no-cache'});fs.createReadStream(filename).pipe(res);});
 (async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const url=`http://127.0.0.1:${server.address().port}/pizza-tracker/`;

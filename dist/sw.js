@@ -1,9 +1,9 @@
 'use strict';
 // Bump this name whenever app shell files change. Updates wait for open app windows to close.
 const CACHE_PREFIX = `pizza-tracker-${encodeURIComponent(self.registration.scope)}-shell-`;
-const CACHE = CACHE_PREFIX + 'v5';
+const CACHE = CACHE_PREFIX + 'v6';
 // The host redirects index.html to the canonical root; cache only that root.
-const FILES = ['./','./theme.css','./app.js','./vault.js','./pwa.js','./reports.js','./vendor/xlsx.full.min.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable.png','./icons/apple-touch-icon.png'];
+const FILES = ['./','./theme.css','./app.js','./vault.js','./history.enc.json','./pwa.js','./reports.js','./vendor/xlsx.full.min.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable.png','./icons/apple-touch-icon.png'];
 const urls = new Set(FILES.map(file=>new URL(file,self.registration.scope).href));
 self.addEventListener('install',event=>event.waitUntil((async()=>{
   const cache=await caches.open(CACHE);
