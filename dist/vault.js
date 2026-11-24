@@ -4,7 +4,7 @@
   const PIN_SALT = '7f4b5a94b2ff461ba23e647a84576ade';
   const PIN_HASH = '320d3a696328d97d1eead42b354f826d959525fd72e8a215eef8a9b139c85be7';
   const rounds = 310000, encoder = new TextEncoder();
-  const HISTORY_ID = 'history-2026-09-19-v1';
+  const HISTORY_ID = 'history-2026-11-24-v2';
   let key = null, payload = null, salt = null, snapshot = null, queue = Promise.resolve();
   let externalUntil = 0, failures = 0, busy = false, locking = false;
   const el = id => document.getElementById(id);

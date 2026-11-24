@@ -19,7 +19,7 @@ assert.deepEqual(core.summarize([{count:0},{count:100}]),{total:100,days:2,avg:5
 // separately verifies the actual bundled history and existing-device migration.
 const salt=crypto.randomBytes(16),iv=crypto.randomBytes(12);
 const fixtureCipher=crypto.createCipheriv('aes-256-gcm',crypto.pbkdf2Sync(pin,salt,310000,32,'sha256'),iv);
-const fixtureBytes=Buffer.concat([fixtureCipher.update(JSON.stringify({id:'history-2026-09-19-v1',records:{}})),fixtureCipher.final(),fixtureCipher.getAuthTag()]);
+const fixtureBytes=Buffer.concat([fixtureCipher.update(JSON.stringify({id:'history-2026-11-24-v2',records:{}})),fixtureCipher.final(),fixtureCipher.getAuthTag()]);
 const fixture=JSON.stringify({version:1,salt:salt.toString('base64'),iv:iv.toString('base64'),cipher:fixtureBytes.toString('base64')});
 const root=path.resolve('dist'),requests=[];
 const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.webmanifest':'application/manifest+json','.png':'image/png'};

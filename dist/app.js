@@ -49,6 +49,7 @@ function summarize(rows) {
   const total = rows.reduce((n, r) => n + r.count, 0);
   return {total, days: rows.length, avg: rows.length ? total / rows.length : null};
 }
+const isEstimate = row => String(row.notes || '').startsWith('[STIMA]');
 let records = {}, selected = today(), dirty = false, page = 0, blocked = false;
 let workbook = null, rawJson = null, pending = [], importIssues = [], loadingFile = false;
 function message(text, error = false) { $('status').textContent = text; $('status').className = error ? 'error' : ''; }
@@ -113,7 +114,8 @@ function render() {
     const s = summarize(list);
     $(prefix+'Total').textContent = fmt.format(s.total);
     $(prefix+'Avg').textContent = s.avg === null ? '—' : fmt.format(s.avg);
-    $(prefix+'Days').textContent = `${s.days} giornat${s.days === 1 ? 'a' : 'e'}`;
+    const estimated=list.filter(isEstimate).length;
+    $(prefix+'Days').textContent = `${s.days} giornat${s.days === 1 ? 'a' : 'e'}${estimated ? ` · ${estimated} stimate` : ''}`;
   }
   const days = new Date(Number(year), Number(month.slice(5)), 0).getDate(), max = Math.max(1, ...monthRows.map(r=>r.count));
   $('chart').replaceChildren();
@@ -121,7 +123,7 @@ function render() {
     const date = `${month}-${pad(day)}`, r = records[date], bar = document.createElement('div');
     bar.className = `bar${date === selected ? ' selected' : ''}${!r ? ' empty' : ''}`;
     bar.style.height = `${r ? Math.max(3, r.count/max*100) : 2}%`;
-    bar.title = `${day}: ${r ? r.count+' pizze' : 'non registrato'}`;
+    bar.title = `${day}: ${r ? r.count+' pizze'+(isEstimate(r)?' (stima)':'') : 'non registrato'}`;
     $('chart').append(bar);
   }
   $('chart').setAttribute('aria-label', `Produzione di ${$('monthTitle').textContent}: ${monthRows.length ? monthRows.map(r=>`${r.date.slice(8)}: ${r.count} pizze`).join(', ') : 'nessuna giornata registrata'}`);

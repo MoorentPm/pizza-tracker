@@ -29,6 +29,8 @@ Web app italiana per il totale delle pizze a fine serata, note, statistiche mens
 
 ## Dati storici
 
+Lo storico originale comprende 493 giornate (45.244 pizze). La versione preparata aggiunge 66 giornate stimate dal 20/09/2026 al 24/11/2026, per 5.511 pizze: totale misto 50.755. I conteggi stimati sono identificati dal prefisso `[STIMA]` nelle note, evidenziati nei riepiloghi e nei report. Media 50% per giorno della settimana in autunno 2025 e 50% nel 2026 fino al 19 settembre; lunedì a zero per chiusura ipotizzata. Le stime non sono conteggi osservati; ferie, eventi e festività non sono modellati. Per sostituire una stima con un dato reale, correggere quantità e rimuovere la nota `[STIMA]`.
+
 Lo storico fornito dal titolare è incluso in `dist/history.enc.json`, cifrato con AES-GCM e una chiave derivata dal PIN tramite PBKDF2-SHA256. Al primo sblocco viene aggiunto automaticamente al deposito locale. Anche chi aveva già utilizzato l'app riceve le date mancanti: dati e note già salvati, giornate a zero e bozze sono mantenuti. Un marcatore dentro l'archivio cifrato impedisce di reimportarlo a ogni apertura.
 
 Il file cifrato è scaricabile dal sito pubblico: chi conosce il PIN può leggere lo storico incluso. Un PIN numerico breve non protegge contro tentativi sistematici offline. I CSV/JSON originali in chiaro e il PIN non sono inclusi nel repository. I nuovi conteggi restano sul dispositivo e non modificano lo storico distribuito.
