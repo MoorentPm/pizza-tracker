@@ -51,6 +51,8 @@ Un cambio di dominio/browser o la cancellazione dei dati del sito richiede un ba
 
 ## Installazione e offline
 
+Se l'icona installata mostra una versione vecchia o mancano le stime, aprire `https://moorentpm.github.io/pizza-tracker/update.html` nello stesso browser del telefono e premere **Aggiorna e apri l'app**, poi inserire il PIN. La pagina scarica e attiva il service worker aggiornato senza cancellare localStorage, archivi o bozze. Funziona anche quando altre finestre tengono attiva una vecchia versione. Non cancellare i dati del sito per aggiornare. Dopo lo sblocco il riepilogo sopra il calendario mostra quante giornate e stime sono effettivamente presenti sul dispositivo.
+
 Manifest, icone 192/512/maskable e apple-touch-icon inclusi. Android/Chrome: menu → Installa app o Aggiungi a schermata Home. Aprire l'icona e attendere “Pronta anche senza internet”. Il service worker memorizza solo gli asset, lasciando i conteggi nel deposito cifrato. Aggiornamenti dell'app in attesa fino alla chiusura delle finestre, senza ricaricare bozze in corso. Incrementare il nome cache in `dist/sw.js` a ogni modifica degli asset.
 
 ## Report semestrale
@@ -67,4 +69,4 @@ SheetJS CE 0.20.3 è inclusa localmente con licenza Apache 2.0 in `dist/vendor/`
 
 Per verificare in locale: `npm ci`, poi `npx playwright install chromium`. Esegui `npm test` con il PIN nella variabile d'ambiente `PIZZA_TEST_PIN`, mai nel repository.
 
-`test.cjs` usa un server locale sotto `/pizza-tracker/` e verifica PIN errato/corretto, migrazione cifrata, calendario, XLSX/CSV, duplicati, report, recupero bozze, errori di scrittura, riapertura offline con salvataggio ed esportazione, isolamento dei dispositivi e conservazione di archivi corrotti. I dati di prova sono generati in una sessione browser isolata e non fanno parte dell'app distribuita. `npm run icons` produce le icone PNG dall'SVG del progetto.
+`test.cjs` usa un server locale sotto `/pizza-tracker/` e verifica PIN errato/corretto, migrazione cifrata, calendario, XLSX/CSV, duplicati, report, recupero bozze, errori di scrittura, riapertura offline con salvataggio ed esportazione, isolamento dei dispositivi e conservazione di archivi corrotti. `test-history.cjs` verifica lo storico incluso e le stime; `test-update.cjs` riproduce una vecchia versione ancora attiva con più schede aperte, quindi verifica l'aggiornamento e la conservazione dei conteggi. Quest'ultimo richiede la cronologia Git (commit `3438766`). I dati di prova sono generati in una sessione browser isolata e non fanno parte dell'app distribuita. `npm run icons` produce le icone PNG dall'SVG del progetto.

@@ -110,6 +110,8 @@ function render() {
   const rows = Object.values(records), monthRows = rows.filter(r => r.date.startsWith(month)), yearRows = rows.filter(r => r.date.startsWith(year));
   $('monthTitle').textContent = new Date(`${selected}T12:00:00`).toLocaleDateString('it-IT', {month:'long', year:'numeric'});
   $('yearLabel').textContent = year;
+  const estimates=rows.filter(isEstimate).sort((a,b)=>a.date.localeCompare(b.date));
+  $('historyCoverage').textContent=estimates.length ? `Archivio sul telefono: ${rows.length} giornate, incluse ${estimates.length} stimate dal ${estimates[0].date.split('-').reverse().join('/')} al ${estimates.at(-1).date.split('-').reverse().join('/')}. I dati già presenti sono mantenuti.` : `Archivio sul telefono: ${rows.length} giornate. Nessuna stima presente. Se manca lo storico, usa “Aggiorna app”.`;
   for (const [prefix, list] of [['month',monthRows],['year',yearRows]]) {
     const s = summarize(list);
     $(prefix+'Total').textContent = fmt.format(s.total);
@@ -272,6 +274,6 @@ function init() {
 }
 if(typeof document!=='undefined'){
   window.addEventListener('pizza-unlocked',init);
-  window.addEventListener('pizza-locked',()=>{records={};dirty=false;workbook=null;rawJson=null;pending=[];importIssues=[];selected=today();$('entryForm').reset();$('records').replaceChildren();$('previewRows').replaceChildren();$('chart').replaceChildren();$('reportPeriod').replaceChildren();for(const id of ['status','monthTotal','yearTotal','monthAvg','yearAvg','monthDays','yearDays','archiveSummary','pageInfo','dayLabel','importSummary','fileName','importErrors','reportSummary','reportCoverage'])$(id).textContent='';});
+  window.addEventListener('pizza-locked',()=>{records={};dirty=false;workbook=null;rawJson=null;pending=[];importIssues=[];selected=today();$('entryForm').reset();$('records').replaceChildren();$('previewRows').replaceChildren();$('chart').replaceChildren();$('reportPeriod').replaceChildren();for(const id of ['historyCoverage','status','monthTotal','yearTotal','monthAvg','yearAvg','monthDays','yearDays','archiveSummary','pageInfo','dayLabel','importSummary','fileName','importErrors','reportSummary','reportCoverage'])$(id).textContent='';});
 }
 if(typeof module!=='undefined')module.exports={validDate,parseDate,parseCount,normalizeRecords,summarize};

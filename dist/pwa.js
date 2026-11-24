@@ -1,9 +1,9 @@
 'use strict';
 (() => {
-  let promptEvent=null,ready=false;
+  let promptEvent=null,ready=false,updateWaiting=false;
   const status=text=>document.querySelectorAll('.offline-state').forEach(e=>e.textContent=text);
   const installed=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-  function connectivity(){status(ready?(navigator.onLine?'Pronta anche senza internet':'Sei offline · puoi continuare a lavorare'):'Primo avvio: preparazione per l’uso offline…');}
+  function connectivity(){status(updateWaiting?'Aggiornamento pronto: tocca “Aggiorna app”.':ready?(navigator.onLine?'Pronta anche senza internet':'Sei offline · puoi continuare a lavorare'):'Primo avvio: preparazione per l’uso offline…');}
   function installLabel(){document.querySelectorAll('.install-trigger').forEach(b=>b.textContent=installed()?'App sul telefono · informazioni':'Aggiungi alla schermata Home');}
   async function install(){
     window.PizzaVault?.externalAction();
@@ -17,11 +17,13 @@
   window.addEventListener('online',connectivity);window.addEventListener('offline',connectivity);
   installLabel();
   if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
-    navigator.serviceWorker.register('./sw.js').then(async registration=>{
+    navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(async registration=>{
+      updateWaiting=!!registration.waiting;
+      if(updateWaiting)connectivity();
       function watchWorker(){
         const worker=registration.installing;
         worker?.addEventListener('statechange',()=>{
-          if(worker.state==='installed'&&navigator.serviceWorker.controller)status('Aggiornamento pronto: chiudi e riapri l’app per applicarlo.');
+          if(worker.state==='installed'&&navigator.serviceWorker.controller){updateWaiting=true;connectivity();}
           if(worker.state==='redundant'&&!registration.active)status('Preparazione offline non riuscita. Riprova con una connessione internet.');
         });
       }
